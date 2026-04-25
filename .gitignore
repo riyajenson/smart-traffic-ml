@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.idea/
+.vscode/
+
+# Generated artifacts
+outputs/
+*.png
+*.joblib
+
+# OS
+Thumbs.db
+Desktop.ini
