@@ -1,83 +1,128 @@
-# Smart Traffic Congestion Detection (Arduino-friendly ML)
+# Smart Traffic ML System
 
-Lightweight Decision Tree classifier for traffic congestion (**LOW / MEDIUM / HIGH**) using windowed features derived from:
+## Overview
 
-- per-vehicle speed estimates (2× HC-SR04 time-of-flight, fixed sensor distance)
-- vehicle detection timestamps
-- vehicle counts in a fixed window (e.g., 10–15 seconds)
+This project is an end-to-end machine learning + IoT system that predicts traffic congestion in real time and integrates with an Arduino-based setup for intelligent traffic control.
 
-## Project layout
+It combines data processing, model training, and live prediction with hardware interaction to simulate a smart traffic management system.
 
-- `train.py`: end-to-end pipeline (generate/load data → train → evaluate → export rules + Arduino header)
-- `traffic_congestion/`: modular library code
-- Outputs (by default): `outputs/`
-  - `evaluation_plots.png`
-  - `decision_tree.png`
-  - `tree_rules.txt`
-  - `congestion_classifier.h`
+---
 
-## Quickstart
+## Features
 
-Create a venv, then:
+* Traffic congestion prediction using ML
+* Real-time data processing via serial communication
+* Arduino integration for live control
+* Modular ML pipeline (training, evaluation, inference)
+* Visualization and analysis tools
+
+---
+
+## Project Structure
+
+```
+smart-traffic-ml/
+│
+├── traffic_congestion/
+│   ├── config.py
+│   ├── data.py
+│   ├── preprocess.py
+│   ├── model.py
+│   ├── evaluate.py
+│   ├── visualize.py
+│   ├── realtime_window.py
+│   └── export_arduino.py
+│
+├── arduino/
+│   └── sketch_feb23a/
+│
+├── train.py
+├── realtime_serial_predict.py
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## How It Works
+
+```
+Sensor Data → Arduino → Serial Communication → Python
+→ Preprocessing → ML Model → Prediction → Arduino Action
+```
+
+---
+
+## Setup Instructions
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/riyajenson/smart-traffic-ml.git
+cd smart-traffic-ml
+```
+
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
-python train.py --use-synthetic --feature-set arduino
 ```
 
-To train on your real labeled CSV:
+---
+
+## 🚀 Usage
+
+### Train the model
 
 ```bash
-python train.py --csv traffic_log.csv --feature-set arduino
+python train.py
 ```
 
-Expected CSV columns:
-
-- `avg_speed` (cm/s)
-- `vehicle_count` (int, per window)
-- `speed_variance`
-- `inter_arrival_avg` (seconds)
-- `flow_rate` (vehicle_count / window_seconds)
-- `label` in `{LOW, MEDIUM, HIGH}`
-
-## Real-time testing with Arduino Serial (VERY IMPORTANT)
-
-1. Train once to create `outputs/model.joblib` and `outputs/model_metadata.json`:
+### Run real-time prediction
 
 ```bash
-python train.py --use-synthetic --feature-set arduino
+python realtime_serial_predict.py
 ```
 
-2. Upload an Arduino sketch that prints lines like:
+Make sure your Arduino is connected and the correct serial port is configured.
 
-- **Recommended**: `speed` (one vehicle per line)
-  - Example: `123.4`
-  - Python will compute `vehicle_count` + `flow_rate` using a 15s window
-- Also supported (older format): `speed,vehicle_count`
-  - Example: `123.4,6`
+---
 
-3. Run the realtime predictor (Windows example):
+## Arduino Integration
 
-```bash
-python realtime_serial_predict.py --port COM3 --baud 9600 --mode speed_only
-```
+* Arduino collects traffic-related inputs (e.g., sensors/timing)
+* Sends data via serial communication to Python
+* Python predicts congestion level
+* Output can be used to control signals dynamically
 
-It will print predicted congestion live for each incoming line.
+---
 
-## Arduino integration
+## Outputs
 
-After training, include the generated header:
+* Predicted congestion levels
+* Visualization graphs
+* Real-time decision signals
 
-```cpp
-#include "congestion_classifier.h"
-// ...
-// If you trained with --feature-set arduino:
-String level = classifyCongestion(avg_speed, vehicle_count, flow_rate);
-```
+---
 
-Regenerate the header any time you retrain:
+## Tech Stack
 
-```bash
-python train.py --use-synthetic --feature-set arduino
-```
+* Python (NumPy, Pandas, scikit-learn)
+* Arduino (C/C++)
+* Serial Communication
+* Data Visualization
 
+---
+
+## Future Improvements
+
+* Add live dashboard (Streamlit / web app)
+* Integrate computer vision (vehicle detection)
+* Deploy model for edge inference
+* Improve dataset and model accuracy
+
+---
+
+## Acknowledgment
+
+Built as a practical implementation of combining Machine Learning + Embedded Systems for real-world problem solving.
