@@ -32,6 +32,17 @@ def parse_args() -> argparse.Namespace:
         choices=["event", "window"],
         help='Print prediction on every new vehicle ("event") or once per full window ("window").',
     )
+    p.add_argument(
+        "--write-back",
+        action="store_true",
+        help='Write the prediction back to Arduino via Serial as a single line: "LOW" | "MEDIUM" | "HIGH".',
+    )
+    p.add_argument(
+        "--write-prefix",
+        type=str,
+        default="",
+        help='Optional prefix for write-back lines (e.g. "PRED:"). Sent as "{prefix}{label}\\n".',
+    )
     return p.parse_args()
 
 
@@ -107,14 +118,21 @@ def main() -> int:
 
             pred = clf.predict(x)[0]
             now = time.time()
+            should_emit = False
             if args.print_every == "event":
+                should_emit = True
                 vc = int(feat_map.get("vehicle_count", 0.0))
                 print(f"speed={speed:7.2f} cm/s  window_count={vc:3d}  avg={feat_map['avg_speed']:7.2f}  =>  congestion={pred}")
             else:
                 if (now - last_window_print_t) >= window_seconds:
+                    should_emit = True
                     last_window_print_t = now
                     vc = int(feat_map.get("vehicle_count", 0.0))
                     print(f"[window] count={vc:3d}  avg={feat_map['avg_speed']:7.2f}  flow={feat_map['flow_rate']:.3f}  =>  congestion={pred}")
+
+            if args.write_back and should_emit:
+                out_line = f"{args.write_prefix}{pred}\n"
+                ser.write(out_line.encode("utf-8", errors="ignore"))
 
     return 0
 
