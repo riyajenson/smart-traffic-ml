@@ -39,7 +39,30 @@ float getDistance(int trigPin, int echoPin) {
   return duration * 0.034 / 2;
 }
 
+void showPrediction(const String &pred) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Congestion:");
+  lcd.setCursor(0, 1);
+  lcd.print(pred);
+}
+
 void loop() {
+  // ---- If Python sends predictions back, show them.
+  if (Serial.available() > 0) {
+    String line = Serial.readStringUntil('\n');
+    line.trim();
+    if (line.length() > 0) {
+      // If you used a prefix like "PRED:", strip it.
+      int idx = line.indexOf(':');
+      if (idx >= 0) line = line.substring(idx + 1);
+      line.trim();
+      if (line.length() > 0) {
+        showPrediction(line);
+      }
+    }
+  }
+
   float d1 = getDistance(trig1, echo1);
   float d2 = getDistance(trig2, echo2);
 
@@ -50,6 +73,11 @@ void loop() {
   if (d2 < 15 && time1 != 0 && time2 == 0) {
     time2 = millis();
     float timeTaken = (time2 - time1) / 1000.0;
+    if (timeTaken <= 0.0) {
+      time1 = 0;
+      time2 = 0;
+      return;
+    }
     float speed = distanceBetween / timeTaken;
 
     lcd.clear();
